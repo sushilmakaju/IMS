@@ -45,7 +45,7 @@ class Order(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
     order_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=50, choices= order_status)  
-    total_amount = models.IntegerField()
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)

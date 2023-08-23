@@ -1,4 +1,3 @@
-from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,7 +10,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import *
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import filters
 
+#Login 
 class LoginAPIView(GenericAPIView):
     def post(self, request):
         email = request.data.get('email')
@@ -27,7 +28,8 @@ class LoginAPIView(GenericAPIView):
             return Response({'token': token.key})
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        
+
+#Register 
 @api_view(['POST'])
 
 def register_view(request):
@@ -45,10 +47,11 @@ def register_view(request):
         else:
             return Response(serializer.errors)
         
+#product view for seller and CRUD 
 class ProductApiView(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter]
     serializer_class = Productserializers
-    filterset_fields = ['product_name', 'stock']
+    search_fields =  ['product_name', 'stock']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, SellerUserPermission]
     
@@ -90,10 +93,11 @@ class ProductApiView(GenericAPIView):
         product_obj.delete()
         return Response('Data Deleted!')
 
+#Product view for buyer 
 class BuyerProductApiView(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter]
     serializer_class = Productserializers
-    filterset_fields = ['product_name', 'stock']
+    search_fields = ['product_name', 'stock']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, BuyerUserPermission]
     
@@ -103,6 +107,7 @@ class BuyerProductApiView(GenericAPIView):
         serializer = self.serializer_class(product_filter, many=True)
         return Response(serializer.data)
    
+#view for buyer details and crud 
 class BuyerApiView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Buyerserializers
@@ -148,6 +153,7 @@ class BuyerApiView(GenericAPIView):
         buyer_obj.delete()
         return Response('Data Deleted!')
 
+#view for seller details and crud
 class SellerApiView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Sellerserializers
@@ -193,7 +199,7 @@ class SellerApiView(GenericAPIView):
         seller_obj.delete()
         return Response('seller Data Deleted!')
     
-
+#view for placing order for buyer
 class OrderApiView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Orderserializers
@@ -230,8 +236,46 @@ class OrderApiView(GenericAPIView):
             return Response(serializer.data)
         else:
             return Response(serializer.errors)
-        
 
+#view for ordering item for buyer     
+class OrderedItemApi(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = OrderedItemserializers
+    filterset_fields = ['product']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, BuyerUserPermission]
+
+    def get(self, request):
+        orderitemobject = OrderItem.objects.all()
+        orderitem_filter = self.filter_queryset(orderitemobject)
+        orderitemserilizer = self.serializer_class(orderitem_filter, many = True)
+        return Response(orderitemserilizer.data)
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            response_data = {
+                'message': 'Orderitem Placed successfully',
+                'data': serializer.data
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+    
+    def put(self, request, pk):
+        try:
+            order_obj = Order.objects.get(id = pk)
+        except:
+            return Response('Data Not Found!')
+        serializer = self.serializer_class(order_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+        
+# view for accepting order for seller 
 class SellerOrderView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Orderserializers
@@ -265,39 +309,7 @@ class SellerOrderView(GenericAPIView):
         return Response({'message': 'Order accepted'})
 
         
-class OrderedItemApi(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
-    serializer_class = OrderedItemserializers
-    filterset_fields = ['product']
-    def get(self, request):
-        orderitemobject = OrderItem.objects.all()
-        orderitem_filter = self.filter_queryset(orderitemobject)
-        orderitemserilizer = self.serializer_class(orderitem_filter, many = True)
-        return Response(orderitemserilizer.data)
-    
-    # def post(self, request):
-    #     serializer = self.serializer_class(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         response_data = {
-    #             'message': 'Orderitem Placed successfully',
-    #             'data': serializer.data
-    #         }
-    #         return Response(response_data, status=status.HTTP_201_CREATED)
-    #     else:
-    #         return Response(serializer.errors)
-    
-    def put(self, request, pk):
-        try:
-            order_obj = Order.objects.get(id = pk)
-        except:
-            return Response('Data Not Found!')
-        serializer = self.serializer_class(order_obj, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors)
+
         
 
 
