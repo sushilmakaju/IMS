@@ -8,6 +8,9 @@ from rest_framework.decorators import api_view
 from .serializers import *
 from django.contrib.auth.hashers import make_password
 from django_filters.rest_framework import DjangoFilterBackend
+from .permissions import *
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 class LoginAPIView(GenericAPIView):
     def post(self, request):
@@ -46,6 +49,8 @@ class ProductApiView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Productserializers
     filterset_fields = ['product_name', 'stock']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, SellerUserPermission]
     
     def get (self, request) :
         product_obj = Product.objects.all()
@@ -85,11 +90,25 @@ class ProductApiView(GenericAPIView):
         product_obj.delete()
         return Response('Data Deleted!')
 
+class BuyerProductApiView(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = Productserializers
+    filterset_fields = ['product_name', 'stock']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, BuyerUserPermission]
+    
+    def get (self, request) :
+        product_obj = Product.objects.all()
+        product_filter = self.filter_queryset(product_obj)
+        serializer = self.serializer_class(product_filter, many=True)
+        return Response(serializer.data)
    
 class BuyerApiView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Buyerserializers
     filterset_fields = ['name', 'phone_number']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, BuyerUserPermission]
 
     def get(self, request):
         buyer_obj = Buyer.objects.all()
@@ -128,6 +147,151 @@ class BuyerApiView(GenericAPIView):
             return Response('Data Not Found!')
         buyer_obj.delete()
         return Response('Data Deleted!')
+
+class SellerApiView(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = Sellerserializers
+    filterset_fields = ['name', 'phone_number']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, SellerUserPermission]
+
+    def get(self, request):
+        seller_obj = Buyer.objects.all()
+        seller_filter = self.filter_queryset(seller_obj)
+        serializer = self.serializer_class(seller_filter, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            response_data = {
+                'message': 'seller added successfully',
+                'data': serializer.data
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+        
+    def put(self, request, pk):
+        try:
+            seller_obj = Seller.objects.get(id = pk)
+        except:
+            return Response('Data Not Found!')
+        serializer = self.serializer_class(seller_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+    
+    def delete(self, request, pk):
+        try:
+            seller_obj = Seller.objects.filter(id = pk)
+        except:
+            return Response('Data Not Found!')
+        seller_obj.delete()
+        return Response('seller Data Deleted!')
+    
+
+class OrderApiView(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = Orderserializers
+    filterset_fields = ['order_date']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, BuyerUserPermission]
+
+    def get(self, request):
+        order_obj = Order.objects.all()
+        order_filter = self.filter_queryset(order_obj)
+        serializer = self.serializer_class(order_filter, many = True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            response_data = {
+                'message': 'Order Placed successfully',
+                'data': serializer.data
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+    
+    def put(self, request, pk):
+        try:
+            order_obj = Order.objects.get(id = pk)
+        except:
+            return Response('Data Not Found!')
+        serializer = self.serializer_class(order_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+        
+
+class SellerOrderView(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = Orderserializers
+    filterset_fields = ['status']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, SellerUserPermission]
+    def get(self, request):
+        # Fetch pending orders for the authenticated seller
+        orders = Order.objects.filter(status='Pending')
+        serializer = Orderserializers(orders, many=True)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        try:
+            order = Order.objects.get(id=pk)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Process the order and update status
+        
+        order.save()
+        return Response({'message': 'Order accepted'})
+        
+class OrderedItemApi(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = OrderedItemserializers
+    filterset_fields = ['product']
+    def get(self, request):
+        orderitemobject = OrderItem.objects.all()
+        orderitem_filter = self.filter_queryset(orderitemobject, many = True)
+        orderitemserilizer = self.serializer_class(orderitem_filter)
+        return Response(orderitemserilizer.data)
+    
+    # def post(self, request):
+    #     serializer = self.serializer_class(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         response_data = {
+    #             'message': 'Orderitem Placed successfully',
+    #             'data': serializer.data
+    #         }
+    #         return Response(response_data, status=status.HTTP_201_CREATED)
+    #     else:
+    #         return Response(serializer.errors)
+    
+    def put(self, request, pk):
+        try:
+            order_obj = Order.objects.get(id = pk)
+        except:
+            return Response('Data Not Found!')
+        serializer = self.serializer_class(order_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+        
+
+
+
 
 
 

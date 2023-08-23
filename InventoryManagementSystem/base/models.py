@@ -2,9 +2,11 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
+
+
 usertype_list = [('Buyer', 'Buyer'), ('Seller', 'Seller')]
 Producttype_list = [('Electronics', 'Electronics') , ('Clothes', 'Clothes')]
-order_status = [('Pending' , 'Pending'), ('Delivered' , 'Delivered')]
+order_status = [('Pending' , 'Pending'), ('accepted' , 'accepted')]
 # Create your models here.
 class User(AbstractUser):
     username = models.CharField(max_length=200, default='User')
@@ -48,7 +50,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
+    quantity = models.IntegerField()
     unit_price = models.IntegerField()
     total_price = models.IntegerField()
 
