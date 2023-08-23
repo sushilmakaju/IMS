@@ -46,6 +46,7 @@ class ProductApiView(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
     serializer_class = Productserializers
     filterset_fields = ['product_name', 'stock']
+    
     def get (self, request) :
         product_obj = Product.objects.all()
         product_filter = self.filter_queryset(product_obj)
@@ -83,6 +84,53 @@ class ProductApiView(GenericAPIView):
             return Response('Data Not Found!')
         product_obj.delete()
         return Response('Data Deleted!')
+
+   
+class BuyerApiView(GenericAPIView):
+    filter_backends = [DjangoFilterBackend]
+    serializer_class = Buyerserializers
+    filterset_fields = ['name', 'phone_number']
+
+    def get(self, request):
+        buyer_obj = Buyer.objects.all()
+        buyer_filter = self.filter_queryset(buyer_obj)
+        serializer = self.serializer_class(buyer_filter, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            response_data = {
+                'message': 'Buyer added successfully',
+                'data': serializer.data
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+        
+    def put(self, request, pk):
+        try:
+            buyer_obj = Buyer.objects.get(id = pk)
+        except:
+            return Response('Data Not Found!')
+        serializer = self.serializer_class(buyer_obj, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+    
+    def delete(self, request, pk):
+        try:
+            buyer_obj = Buyer.objects.filter(id = pk)
+        except:
+            return Response('Data Not Found!')
+        buyer_obj.delete()
+        return Response('Data Deleted!')
+
+
+
 
 
       
