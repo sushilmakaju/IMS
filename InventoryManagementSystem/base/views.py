@@ -251,9 +251,19 @@ class SellerOrderView(GenericAPIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         # Process the order and update status
-        
+        order.status = 'accepted'
         order.save()
+
+        # Update product quantities
+        for order_item in order.orderitem_set.all():
+            product = order_item.product
+            print(f"Product: {product}, Initial Stock: {product.stock}, Quantity: {order_item.quantity}")
+            product.stock -= order_item.quantity
+            print(f"Updated Stock: {product.stock}")
+            product.save()
+
         return Response({'message': 'Order accepted'})
+
         
 class OrderedItemApi(GenericAPIView):
     filter_backends = [DjangoFilterBackend]
@@ -261,8 +271,8 @@ class OrderedItemApi(GenericAPIView):
     filterset_fields = ['product']
     def get(self, request):
         orderitemobject = OrderItem.objects.all()
-        orderitem_filter = self.filter_queryset(orderitemobject, many = True)
-        orderitemserilizer = self.serializer_class(orderitem_filter)
+        orderitem_filter = self.filter_queryset(orderitemobject)
+        orderitemserilizer = self.serializer_class(orderitem_filter, many = True)
         return Response(orderitemserilizer.data)
     
     # def post(self, request):
