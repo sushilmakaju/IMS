@@ -57,9 +57,14 @@ class ProductApiView(GenericAPIView):
     
     
     def get (self, request) :
-        product_obj = Product.objects.all()
-        product_filter = self.filter_queryset(product_obj)
-        serializer = self.serializer_class(product_filter, many=True)
+        try:
+            seller = Seller.objects.get(user=request.user)
+        except Seller.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch orders for the authenticated seller
+        product_obj = Product.objects.filter(seller=seller)
+        serializer = Productserializers(product_obj, many=True)
         return Response(serializer.data)
     
     def post (self, request):
@@ -117,9 +122,13 @@ class BuyerApiView(GenericAPIView):
     permission_classes = [IsAuthenticated, BuyerUserPermission]
 
     def get(self, request):
-        buyer_obj = Buyer.objects.all()
-        buyer_filter = self.filter_queryset(buyer_obj)
-        serializer = self.serializer_class(buyer_filter, many=True)
+        # buyer_obj = Buyer.objects.all()
+        # buyer_filter = self.filter_queryset(buyer_obj)
+        # serializer = self.serializer_class(buyer_filter, many=True)
+        # return Response(serializer.data)
+
+        buyer_obj = Buyer.objects.filter(user = request.user)
+        serializer = Buyerserializers(buyer_obj, many=True)
         return Response(serializer.data)
     
     def post(self, request):
@@ -163,9 +172,13 @@ class SellerApiView(GenericAPIView):
     permission_classes = [IsAuthenticated, SellerUserPermission]
 
     def get(self, request):
-        seller_obj = Buyer.objects.all()
-        seller_filter = self.filter_queryset(seller_obj)
-        serializer = self.serializer_class(seller_filter, many=True)
+        # seller_obj = Seller.objects.all()
+        # seller_filter = self.filter_queryset(seller_obj)
+        # serializer = self.serializer_class(seller_filter, many=True)
+
+        # Fetch seller data for the authenticated seller
+        seller_obj = Seller.objects.filter(user = request.user)
+        serializer = Sellerserializers(seller_obj, many=True)
         return Response(serializer.data)
     
     def post(self, request):
@@ -238,43 +251,7 @@ class OrderApiView(GenericAPIView):
         else:
             return Response(serializer.errors)
 
-#view for ordering item for buyer     
-class OrderedItemApi(GenericAPIView):
-    filter_backends = [filters.SearchFilter]
-    serializer_class = Orderserializers
-    search_fields = ['product']
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, BuyerUserPermission]
 
-    def get(self, request):
-        orderitemobject = Order.objects.all()
-        orderitem_filter = self.filter_queryset(orderitemobject)
-        orderitemserilizer = self.serializer_class(orderitem_filter, many = True)
-        return Response(orderitemserilizer.data)
-    
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            response_data = {
-                'message': 'Orderitem Placed successfully',
-                'data': serializer.data
-            }
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors)
-    
-    def put(self, request, pk):
-        try:
-            order_obj = Order.objects.get(id = pk)
-        except:
-            return Response('Data Not Found!')
-        serializer = self.serializer_class(order_obj, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors)
         
 # view for accepting order for seller 
 class SellerOrderView(GenericAPIView):
@@ -283,9 +260,20 @@ class SellerOrderView(GenericAPIView):
     search_fields = ['status']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, SellerUserPermission]
+
     def get(self, request):
         # Fetch pending orders for the authenticated seller
-        orders = Order.objects.filter(status='Pending')
+        # orders = Order.objects.filter(status='Pending')
+        # serializer = Orderserializers(orders, many=True)
+        # return Response(serializer.data)
+    
+        try:
+            seller = Seller.objects.get(user=request.user)
+        except Seller.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch orders for the authenticated seller
+        orders = Order.objects.filter(seller=seller, status = "Pending")
         serializer = Orderserializers(orders, many=True)
         return Response(serializer.data)
 
@@ -295,21 +283,42 @@ class SellerOrderView(GenericAPIView):
         except Order.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        # Process the order and update status
-        order.status = 'accepted'
-        order.save()
+        if order.status == 'Pending':
+            # Process the order and update status
+            order.status = 'accepted'
+            order.save()
 
-        # Update product quantities
-        for order_item in order.orderitem_set.all():
-            product = order_item.product
-            print(f"Product: {product}, Initial Stock: {product.stock}, Quantity: {order_item.quantity}")
-            product.stock -= order_item.quantity
+            # Update product quantities
+            product = order.product
+            print(f"Product: {product}, Initial Stock: {product.stock}, Quantity: {order.quantity}")
+            product.stock -= order.quantity
             print(f"Updated Stock: {product.stock}")
             product.save()
 
-        return Response({'message': 'Order accepted'})
+            return Response({'message': 'Order accepted'})
+        else:
+            return Response({'message': 'Order has already been processed'})
 
-        
+
+class SellerOrderHistoryView(GenericAPIView):
+    filter_backends = [filters.SearchFilter]
+    serializer_class = Orderserializers
+    search_fields = ['status']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, SellerUserPermission]
+
+    def get(self, request):
+    
+        try:
+            seller = Seller.objects.get(user=request.user)
+        except Seller.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch orders for the authenticated seller
+        orders = Order.objects.filter(seller=seller)
+        serializer = Orderserializers(orders, many=True)
+        return Response(serializer.data)
+      
 
         
 

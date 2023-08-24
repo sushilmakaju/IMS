@@ -13,7 +13,7 @@ urlpatterns = [
     path('seller/<pk>', SellerApiView.as_view(), name='SellerApiView'),
     path('order', OrderApiView.as_view(), name='OrderApiVIew'),
     path('order/<pk>', OrderApiView.as_view(), name='OrderApiVIew'),
-    path('orderitem', OrderedItemApi.as_view(), name="OrderedItemApi"),
+    path('sellerorderhistory', SellerOrderHistoryView.as_view(), name="SellerOrderHistoryView"),
     path('sellerorderdashboard/', SellerOrderView.as_view(), name='SellerOrderView'),
     path('sellerorderdashboard/<pk>', SellerOrderView.as_view(), name='SellerOrderView')
 ]
