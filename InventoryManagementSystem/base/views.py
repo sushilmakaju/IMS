@@ -307,14 +307,12 @@ class SellerOrderHistoryView(GenericAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, SellerUserPermission]
 
-    def get(self, request):
-    
+    def get(self, request):   
         try:
             seller = Seller.objects.get(user=request.user)
         except Seller.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
-        # Fetch orders for the authenticated seller
+        
         orders = Order.objects.filter(seller=seller)
         serializer = Orderserializers(orders, many=True)
         return Response(serializer.data)
