@@ -38,6 +38,7 @@ class Product(models.Model):
     product_name = models.CharField(max_length=200)
     product_type = models.CharField(max_length=20, choices=Producttype_list)
     stock = models.IntegerField()
+    product_price = models.IntegerField()
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
 
 class Order(models.Model):
@@ -45,12 +46,12 @@ class Order(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
     order_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=50, choices= order_status)  
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null = True)
     quantity = models.IntegerField()
-    unit_price = models.IntegerField()
-    total_price = models.IntegerField()
+
+
+
+# class OrderItem(models.Model):
+#     order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    
 

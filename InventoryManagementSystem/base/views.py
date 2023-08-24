@@ -241,13 +241,13 @@ class OrderApiView(GenericAPIView):
 #view for ordering item for buyer     
 class OrderedItemApi(GenericAPIView):
     filter_backends = [filters.SearchFilter]
-    serializer_class = OrderedItemserializers
+    serializer_class = Orderserializers
     search_fields = ['product']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, BuyerUserPermission]
 
     def get(self, request):
-        orderitemobject = OrderItem.objects.all()
+        orderitemobject = Order.objects.all()
         orderitem_filter = self.filter_queryset(orderitemobject)
         orderitemserilizer = self.serializer_class(orderitem_filter, many = True)
         return Response(orderitemserilizer.data)
