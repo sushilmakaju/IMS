@@ -55,6 +55,7 @@ class ProductApiView(GenericAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, SellerUserPermission]
     
+    
     def get (self, request) :
         product_obj = Product.objects.all()
         product_filter = self.filter_queryset(product_obj)
@@ -109,9 +110,9 @@ class BuyerProductApiView(GenericAPIView):
    
 #view for buyer details and crud 
 class BuyerApiView(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter]
     serializer_class = Buyerserializers
-    filterset_fields = ['name', 'phone_number']
+    search_fields = ['name', 'phone_number']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, BuyerUserPermission]
 
@@ -201,9 +202,9 @@ class SellerApiView(GenericAPIView):
     
 #view for placing order for buyer
 class OrderApiView(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter]
     serializer_class = Orderserializers
-    filterset_fields = ['order_date']
+    search_fields = ['order_date']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, BuyerUserPermission]
 
@@ -239,9 +240,9 @@ class OrderApiView(GenericAPIView):
 
 #view for ordering item for buyer     
 class OrderedItemApi(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter]
     serializer_class = OrderedItemserializers
-    filterset_fields = ['product']
+    search_fields = ['product']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, BuyerUserPermission]
 
@@ -277,9 +278,9 @@ class OrderedItemApi(GenericAPIView):
         
 # view for accepting order for seller 
 class SellerOrderView(GenericAPIView):
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [filters.SearchFilter]
     serializer_class = Orderserializers
-    filterset_fields = ['status']
+    search_fields = ['status']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, SellerUserPermission]
     def get(self, request):
