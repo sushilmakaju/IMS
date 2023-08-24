@@ -31,9 +31,8 @@ class LoginAPIView(GenericAPIView):
 
 #Register 
 @api_view(['POST'])
-
 def register_view(request):
-
+    
     if request.method == 'POST':
         request.data['username'] = 'user'
         
