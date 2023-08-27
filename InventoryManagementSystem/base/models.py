@@ -45,7 +45,7 @@ class Order(models.Model):
     buyer = models.ForeignKey(Buyer, on_delete=models.CASCADE)
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE)
     order_date = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=50, choices= order_status)  
+    status = models.CharField(max_length=50, choices= order_status, default= "Pending")  
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null = True)
     quantity = models.IntegerField()
 

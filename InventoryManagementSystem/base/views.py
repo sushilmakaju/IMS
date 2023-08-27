@@ -32,7 +32,7 @@ class LoginAPIView(GenericAPIView):
 #Register 
 @api_view(['POST'])
 def register_view(request):
-    
+
     if request.method == 'POST':
         request.data['username'] = 'user'
         
@@ -53,8 +53,7 @@ class ProductApiView(GenericAPIView):
     search_fields =  ['product_name', 'stock']
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, SellerUserPermission]
-    
-    
+      
     def get (self, request) :
         try:
             seller = Seller.objects.get(user=request.user)
@@ -317,6 +316,23 @@ class SellerOrderHistoryView(GenericAPIView):
         return Response(serializer.data)
       
 
+
+class BuyerOrderHistoryView(GenericAPIView):
+    filter_backends = [filters.SearchFilter]
+    serializer_class = Orderserializers
+    search_fields = ['status']
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, BuyerUserPermission]
+
+    def get(self, request):   
+        try:
+            buyer = Buyer.objects.get(user=request.user)
+        except buyer.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        orders = Order.objects.filter(buyer=buyer)
+        serializer = Orderserializers(orders, many=True)
+        return Response(serializer.data)
         
 
 
